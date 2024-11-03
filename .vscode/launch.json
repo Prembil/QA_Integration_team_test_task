@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Run Watch-Dir-Tree.ps1",
+            "script": "${workspaceFolder}/Watch-Dir-Tree.ps1",
+            "args": [
+                "-sourceDir", "${workspaceFolder}/test/src",
+                "-watcherDelay", "1"
+            ]
+        },
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Run Sync-Main.ps1",
+            "script": "${workspaceFolder}/Sync-Main.ps1",
+            "args": [
+                "-sourceDir", "${workspaceFolder}/test/src",
+                "-destinationDir", "${workspaceFolder}/test/dst",
+                "-logFilePath", "${workspaceFolder}/test/out.log",
+            ]
+        },
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Run Copy-Dir.ps1",
+            "script": "${workspaceFolder}/Copy-Dir.ps1",
+            "args": [
+                "-sourceDir", "${workspaceFolder}/test/src",
+                "-destinationDir", "${workspaceFolder}/test/dst",
+            ]
+        }
+    ]
+}
