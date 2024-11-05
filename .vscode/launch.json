@@ -25,8 +25,8 @@
         {
             "type": "PowerShell",
             "request": "launch",
-            "name": "Run Copy-Dir.ps1",
-            "script": "${workspaceFolder}/Copy-Dir.ps1",
+            "name": "Run Mirror-Dir.ps1",
+            "script": "${workspaceFolder}/Mirror-Dir.ps1",
             "args": [
                 "-sourceDir", "${workspaceFolder}/test/src",
                 "-destinationDir", "${workspaceFolder}/test/dst",

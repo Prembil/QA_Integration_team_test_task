@@ -41,6 +41,85 @@ function AreAllJobsInState {
     return $true
 }
 
+# Function to process single change in the directory tree
+function ProcessDirTreeChange {
+    param (
+        [Parameter(Mandatory = $true)]
+        $change,
+        [Parameter(Mandatory = $true)]
+        $sourceDir,
+        [Parameter(Mandatory = $true)]
+        $destinationDir,
+        [Parameter(Mandatory = $true)]
+        $logger,
+        [Parameter(Mandatory = $true)]
+        $syncDateTime
+    )
+
+    $isoTimestamp = $change.DateTime.ToString("o")
+    $changeDestination = $change.FullPath -replace [regex]::Escape($sourceDir), $destinationDir
+    switch ($change.ChangeType) {
+        "Created" {
+            try {
+                $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
+            }
+            catch {
+                $logger.AppendLog("Failed to create: '$($changeDestination)' at [$isoTimestamp]", [MessageType]::Warning)
+                break;
+            }
+            $logger.AppendLog("Created: '$($change.FullPath)' at [$isoTimestamp]")
+        }
+        "Changed" {
+            try {
+                # Ignore if the "Changed" is for a directory
+                if ((Get-Item -Path $change.FullPath).PSIsContainer) { break }
+                # Copy the file to the destination directory
+                $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
+            }
+            catch {
+                $logger.AppendLog("Failed to update: '$($changeDestination)' at [$isoTimestamp]", [MessageType]::Warning)
+                break;
+            }
+            $logger.AppendLog("Changed: '$($change.FullPath)' at [$isoTimestamp]")
+        }
+        "Deleted" {
+            try {
+                # Simple delete
+                $null = Remove-Item -Path $changeDestination -Force -Recurse
+            }
+            catch {
+                $logger.AppendLog("Failed to delete: '$($changeDestination)' at [$isoTimestamp]", [MessageType]::Warning)
+                break;
+            }
+            $logger.AppendLog("Deleted: '$($change.FullPath)' at [$isoTimestamp]")
+        }
+        "Renamed" {
+            $changeOldDestination = $change.OldFullPath -replace [regex]::Escape($sourceDir), $destinationDir
+            $failedRename = $false
+            try {
+                # Rename the file or directory in the destination
+                $null = Rename-Item -Path $changeOldDestination -NewName $changeDestination -Force
+            }
+            catch {
+                $failedRename = $true
+                $logger.AppendLog("Failed to rename: '$($changeDestination)' -> '$($change.FullPath)' at [$isoTimestamp]", [MessageType]::Warning)
+            }
+            try {
+                # if the rename failed or the destination was not in sync when the rename occurred, copy the file or directory
+                if ($failedRename -or $syncDateTime -gt $change.DateTime) {
+                    $out = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -depth 0 -force
+                    $logger.AppendLog($out.ToString(), $out.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
+                }
+            }
+            catch {
+                $logger.AppendLog("Failed to copy renamed: '$($changeDestination)' -> '$($change.FullPath)' at [$isoTimestamp]", [MessageType]::Warning)
+                break;
+            }
+            $logger.AppendLog("Renamed: '$($change.OldFullPath)' -> '$($change.FullPath)' at [$isoTimestamp]")
+        }
+    }
+}
+
 # # Import the Logger class
 # Import-Module -Name "$PSScriptRoot/Log-Data.psm1" -Force -ErrorAction Stop
 
@@ -77,6 +156,12 @@ if ($sourceDir -eq $destinationDir) {
     exit 1
 }
 
+# Check if the source directory is a parent of the destination directory
+if ($destinationDir.StartsWith($sourceDir)) {
+    Write-Error "Destination directory cannot be a subdirectory of the source directory."
+    exit 1
+}
+
 # Initialize arrays, qInitTree (q1) for initial directory structure and qChanges (q2) for changes
 $global:qInitTree = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
 $global:qChanges = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
@@ -95,10 +180,10 @@ try {
         & "$root/Watch-Dir-Tree.ps1" -sourceDir $sourceDir
     } -ArgumentList $PSScriptRoot, $sourceDir
     
-    # Start Copy-Dir.ps1 as a job
+    # Start Mirror-Dir.ps1 as a job
     $jobs += Start-Job -ScriptBlock {
         param ($root, $sourceDir, $destinationDir)
-        & "$root/Copy-Dir.ps1" -sourceDir $sourceDir -destinationDir $destinationDir
+        & "$root/Mirror-Dir.ps1" -sourceDir $sourceDir -destinationDir $destinationDir
     } -ArgumentList $PSScriptRoot, $sourceDir, $destinationDir
    
 
@@ -119,65 +204,13 @@ try {
 
     $syncDateTime = Get-Date
 
+    # Polling changes in the source directory
     while ($jobs[[JobType]::WatchDirTree].State -eq "Running") {
         # Check for changes in the source directory
         $changes = Receive-Job -Job $jobs[[JobType]::WatchDirTree]
-        foreach ($change in $Changes) {
-            $isoTimestamp = $change.DateTime.ToString("o")
-            $changeDestination = $change.FullPath -replace [regex]::Escape($sourceDir), $destinationDir
-            switch ($change.ChangeType) {
-                "Created" {
-                    try {
-                        $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
-                    }
-                    catch {
-                        $logger.AppendLog("Failed to create: $($changeDestination) at [$isoTimestamp]", [MessageType]::Warning)
-                        break;
-                    }
-                    $logger.AppendLog("Created: $($change.FullPath) at [$isoTimestamp]")
-                }
-                "Changed" {
-                    try {
-                        $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
-                    }
-                    catch {
-                        $logger.AppendLog("Failed to update: $($changeDestination) at [$isoTimestamp]", [MessageType]::Warning)
-                        break;
-                    }
-                    $logger.AppendLog("Changed: $($change.FullPath) at [$isoTimestamp]")
-                }
-                "Deleted" {
-                    try {
-                        $null = Remove-Item -Path $changeDestination -Force -Recurse
-                    }
-                    catch {
-                        $logger.AppendLog("Failed to delete: $($changeDestination) at [$isoTimestamp]", [MessageType]::Warning)
-                        break;
-                    }
-                    $logger.AppendLog("Deleted: $($change.FullPath) at [$isoTimestamp]")
-                }
-                "Renamed" {
-                    $changeOldDestination = $change.OldFullPath -replace [regex]::Escape($sourceDir), $destinationDir
-                    $failedRename = $false
-                    try {
-                        $null = Rename-Item -Path $changeOldDestination -NewName $changeDestination -Force
-                    }
-                    catch {
-                        $failedRename = $true
-                        $logger.AppendLog("Failed to rename: $($changeDestination) -> $($change.FullPath) at [$isoTimestamp]", [MessageType]::Warning)
-                    }
-                    try {
-                        if ($failedRename -or $syncDateTime -gt $change.DateTime) {
-                            $out = & "$PSScriptRoot/Copy-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -depth 0
-                            $logger.AppendLog($out.ToString(), $out.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
-                        }
-                    }
-                    catch {
-                        $logger.AppendLog("Failed to copy renamed: $($changeDestination) -> $($change.FullPath) at [$isoTimestamp]", [MessageType]::Warning)
-                    }                    
-                    $logger.AppendLog("Renamed: $($change.OldFullPath) -> $($change.FullPath) at [$isoTimestamp]")
-                }
-            }
+        foreach ($change in $changes) {
+            # Process each change in the source directory
+            ProcessDirTreeChange -change $change -sourceDir $sourceDir -destinationDir $destinationDir -logger $logger -syncDateTime $syncDateTime
         }
         Start-Sleep -Seconds 1
     }
@@ -193,7 +226,7 @@ catch {
 finally {
     # Cleanup
     $jobs | ForEach-Object { $_.Dispose() }
-    $logger.Dispose()
+    if ($logger) { $logger.Dispose() }
     Write-Host "Sync-Main Cleanup complete."
 }
 

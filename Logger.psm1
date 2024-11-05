@@ -23,6 +23,10 @@ class Logger : IDisposable {
         $this.StreamWriter = [System.IO.StreamWriter]::new($this.LogFilePath, $true)
     }
 
+    static [void] WriteHeader([string]$logFilePath) {
+        Add-Content -Path $logFilePath -Value "ISO 8601 Timestamp [MessageType] - Message"
+    }
+
     static [string] FormatLogEntry([string]$message, [MessageType]$messageType) {
         # ISO 8601
         $timestamp = Get-Date -Format "o"

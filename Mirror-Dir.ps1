@@ -7,7 +7,10 @@ param (
     [string]$destinationDir,
 
     [Parameter(Mandatory = $false)]
-    [int]$depth = 0
+    [int]$depth = 0,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Force creation of destination directory")]
+    [switch]$force
 )
 
 # Validate source directory
@@ -18,8 +21,18 @@ if (-Not (Test-Path -Path $sourceDir -PathType Container)) {
 
 # Validate destination directory
 if (-Not (Test-Path -Path $destinationDir -PathType Container)) {
-    Write-Error "Destination directory '$destinationDir' does not exist."
-    exit 1
+    if (!$force) {
+        Write-Error "Destination directory '$destinationDir' does not exist."
+        exit 1
+    }
+    # Force creation of destination directory
+    try {
+        $null = New-Item -Path $destinationDir -ItemType Directory -Force
+    }
+    catch {
+        Write-Error $_.Exception.Message
+        exit 1
+    }
 }
 
 function RemoveMatchingSrcDst {
@@ -43,6 +56,11 @@ $destinationDir = (Get-Item -Path $destinationDir).FullName
 # Check if the source and destination directories are the same
 if ($sourceDir -eq $destinationDir) {
     Write-Error "Source and destination directories cannot be the same."
+    exit 1
+}
+# Check if the source directory is a parent of the destination directory
+if ($destinationDir.StartsWith($sourceDir)) {
+    Write-Error "Destination directory cannot be a subdirectory of the source directory."
     exit 1
 }
 
@@ -125,6 +143,14 @@ for ($i = 0; $i -lt $srcItems.Count; $i++) {
 # Iterate over the remaining items in the destination directory
 for ($i = 0; $i -lt $dstItems.Count; $i++) {
     $item = $dstItems[$i]
+    try {
+        $null = Remove-Item -Path $item.FullName -Force -Recurse
+    }
+    catch {
+        Write-Output ([FileOperation]::new($item.FullName, $null, $item.PSIsContainer ? "Directory" : "File", "Failed"))
+        Write-Error $_.Exception.Message
+        continue
+    }
     Write-Output ([FileOperation]::new($null, $item.FullName, $item.PSIsContainer ? "Directory" : "File" , "Extra"))
 }
 
