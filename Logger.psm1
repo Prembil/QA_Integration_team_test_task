@@ -14,11 +14,12 @@ class Logger : IDisposable {
     [System.IO.StreamWriter]$StreamWriter
 
     Logger([string]$logFilePath) {
-        $this.LogFilePath = $logFilePath
         # Ensure the log file exists
-        if (-Not (Test-Path -Path $this.LogFilePath -PathType Leaf)) {
-            New-Item -Path $this.LogFilePath -ItemType File -Force | Out-Null
+        if (-Not (Test-Path -Path $logFilePath)) {
+            New-Item -Path $logFilePath -ItemType File -Force
         }
+        # Convert relative path to full path
+        $this.LogFilePath = (Get-Item -Path $logFilePath).FullName
         # Open the StreamWriter
         $this.StreamWriter = [System.IO.StreamWriter]::new($this.LogFilePath, $true)
     }
