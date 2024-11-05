@@ -33,7 +33,7 @@ Watch and report directory tree changes.
 [Parameter(Mandatory = $false, HelpMessage = "Delay in seconds")]
 [int]$watcherDelay = 1
 ```
-`$watcherDelay` is the Write-Out delay in seconds. 
+`$watcherDelay` is the Write-Output delay in seconds. 
 
 ## Mirror-Dir.ps1
 
