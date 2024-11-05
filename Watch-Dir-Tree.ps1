@@ -3,7 +3,7 @@ param (
     [string]$sourceDir,
 
     [Parameter(Mandatory = $false, HelpMessage = "Delay in seconds")]
-    [string]$watcherDelay = 1
+    [int]$watcherDelay = 1
 )
 
 <#
@@ -37,6 +37,12 @@ function onExit {
 # Validate source directory
 if (-Not (Test-Path -Path $sourceDir -PathType Container)) {
     Write-Error "Source directory '$sourceDir' does not exist."
+    exit 1
+}
+
+# Validate watcher delay
+if ($watcherDelay -lt 1) {
+    Write-Error "Watcher delay must be at least 1 second."
     exit 1
 }
 

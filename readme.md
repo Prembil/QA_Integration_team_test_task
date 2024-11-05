@@ -2,10 +2,15 @@
 
 Github repository by Ing. Premysl Bilek
 
+Mirror one directory to another directory and react to changes in the source directory.
+
 # Input parameters
 Input parameters for scripts in this repository
 
 ## Sync-Main.ps1
+
+The main script to synchronize two directories. This script will utilize the other scripts in this repository. 
+
 ```powershell
 [Parameter(Mandatory = $true)]
 [string]$sourceDir,
@@ -18,16 +23,22 @@ Input parameters for scripts in this repository
 ```
 
 ## Watch-Dir-Tree.ps1
+
+Watch and report directory tree changes. 
+
 ```powershell
 [Parameter(Mandatory = $true)]
 [string]$sourceDir,
 
 [Parameter(Mandatory = $false, HelpMessage = "Delay in seconds")]
-[string]$watcherDelay = 1
+[int]$watcherDelay = 1
 ```
 `$watcherDelay` is the Write-Out delay in seconds. 
 
 ## Mirror-Dir.ps1
+
+Mirror a directory tree.
+
 ```powershell
 [Parameter(Mandatory = $true)]
 [string]$sourceDir,
