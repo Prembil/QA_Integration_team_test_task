@@ -1,2 +1,4 @@
 test/dst/*
 test/out.log
+!test/dst/.gitkeep
+!test/src/.gitkeep
