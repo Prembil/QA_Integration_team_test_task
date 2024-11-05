@@ -7,39 +7,39 @@ Input parameters for scripts in this repository
 
 ## Sync-Main.ps1
 ```powershell
-    [Parameter(Mandatory = $true)]
-    [string]$sourceDir,
+[Parameter(Mandatory = $true)]
+[string]$sourceDir,
 
-    [Parameter(Mandatory = $true)]
-    [string]$destinationDir,
+[Parameter(Mandatory = $true)]
+[string]$destinationDir,
 
-    [Parameter(Mandatory = $true)]
-    [string]$logFilePath
+[Parameter(Mandatory = $true)]
+[string]$logFilePath
 ```
 
 ## Watch-Dir-Tree.ps1
 ```powershell
-    [Parameter(Mandatory = $true)]
-    [string]$sourceDir,
+[Parameter(Mandatory = $true)]
+[string]$sourceDir,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Delay in seconds")]
-    [string]$watcherDelay = 1
+[Parameter(Mandatory = $false, HelpMessage = "Delay in seconds")]
+[string]$watcherDelay = 1
 ```
 `$watcherDelay` is the Write-Out delay in seconds. 
 
 ## Mirror-Dir.ps1
 ```powershell
-    [Parameter(Mandatory = $true)]
-    [string]$sourceDir,
+[Parameter(Mandatory = $true)]
+[string]$sourceDir,
 
-    [Parameter(Mandatory = $true)]
-    [string]$destinationDir,
+[Parameter(Mandatory = $true)]
+[string]$destinationDir,
 
-    [Parameter(Mandatory = $false)]
-    [int]$depth = 0,
+[Parameter(Mandatory = $false)]
+[int]$depth = 0,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Force creation of destination directory")]
-    [switch]$force
+[Parameter(Mandatory = $false, HelpMessage = "Force creation of destination directory")]
+[switch]$force
 ```
 `$depth` is the depth of the directory tree to be mirrored. Default is 0, which means all subdirectories and files are copied. 
 
