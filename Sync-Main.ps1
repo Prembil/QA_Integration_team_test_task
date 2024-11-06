@@ -16,6 +16,19 @@ enum JobType : int {
     CopyDir
 }
 
+function processMirrorDirTransfers {
+    param(
+        [Parameter(Mandatory = $true)]
+        $transfers, 
+        
+        [Parameter(Mandatory = $true)]
+        $logger)
+
+    foreach ($transfer in $transfers) {
+        $logger.AppendLog($transfer.ToString(), $transfer.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
+    }
+}
+
 # Function to check if all jobs are in the specified state
 function AreAllJobsInState {
     param (
@@ -102,9 +115,10 @@ function ProcessDirTreeChange {
                 if ($failedRename -or $syncDateTime -gt $change.DateTime) {
                     if ((Get-Item -Path $change.FullPath).PSIsContainer) {
                         # If it is a directory, copy the directory
-                        $out = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -force
-                        $logger.AppendLog($out.ToString(), $out.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
-                    }else{
+                        $transfers = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -force
+                        processMirrorDirTransfers -transfers $transfers -logger $logger
+                    }
+                    else {
                         # Copy the file to the destination directory
                         $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
                     }
@@ -195,9 +209,7 @@ try {
     # Wait for the initial directory structure to be built and all files to be copied
     while ((AreAllJobsInState($jobs, "Running")) -or $jobs[[JobType]::CopyDir].HasMoreData) {
         $transfers = Receive-Job -Job $jobs[[JobType]::CopyDir] -Wait
-        foreach ($transfer in $transfers) {
-            $logger.AppendLog($transfer.ToString(), $transfer.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
-        }
+        processMirrorDirTransfers -transfers $transfers -logger $logger
         # Flush the log file if there were any transfers
         if ($transfers.Count -gt 0) {
             $logger.Flush();

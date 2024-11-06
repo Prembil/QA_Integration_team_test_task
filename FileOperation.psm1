@@ -13,6 +13,6 @@ class FileOperation {
     }
 
     [string] ToString() {
-        return "Source: $($this.Source), Destination: $($this.Destination), Type: $($this.Type), Status: $($this.Status)"
+        return "Source: '$($this.Source)', Destination: '$($this.Destination)', Type: $($this.Type), Status: $($this.Status)"
     }
 }
