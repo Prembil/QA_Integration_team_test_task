@@ -11,13 +11,6 @@ param (
     [string]$logFilePath
 )
 
-<#
-    todo:
-        dst bigger than src on init
-        copy paste of folders creates duplicates
-#>
-
-
 enum JobType : int {
     WatchDirTree
     CopyDir
@@ -102,17 +95,23 @@ function ProcessDirTreeChange {
             }
             catch {
                 $failedRename = $true
-                $logger.AppendLog("Failed to rename: '$($changeDestination)' -> '$($change.FullPath)' at [$isoTimestamp]", [MessageType]::Warning)
+                $logger.AppendLog("Failed to rename (destination target not found, trying method 2): '$($changeDestination)' -> '$($change.FullPath)' at [$isoTimestamp]", [MessageType]::Warning)
             }
             try {
                 # if the rename failed or the destination was not in sync when the rename occurred, copy the file or directory
                 if ($failedRename -or $syncDateTime -gt $change.DateTime) {
-                    $out = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -depth 0 -force
-                    $logger.AppendLog($out.ToString(), $out.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
+                    if ((Get-Item -Path $change.FullPath).PSIsContainer) {
+                        # If it is a directory, copy the directory
+                        $out = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -force
+                        $logger.AppendLog($out.ToString(), $out.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
+                    }else{
+                        # Copy the file to the destination directory
+                        $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
+                    }
                 }
             }
             catch {
-                $logger.AppendLog("Failed to copy renamed: '$($changeDestination)' -> '$($change.FullPath)' at [$isoTimestamp]", [MessageType]::Warning)
+                $logger.AppendLog("Failed to copy renamed: '$($change.FullPath)' -> '$($changeDestination)' at [$isoTimestamp]", [MessageType]::Warning)
                 break;
             }
             $logger.AppendLog("Renamed: '$($change.OldFullPath)' -> '$($change.FullPath)' at [$isoTimestamp]")

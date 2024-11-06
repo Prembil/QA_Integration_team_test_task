@@ -41,7 +41,6 @@ function RemoveMatchingSrcDst {
         [array]$dstArray
     )
         
-    # todo fix regex
     return $dstArray | Where-Object { 
         $wouldBeSrcPath = $_.FullName -replace [regex]::Escape($destinationDir), $sourceDir
         # $wouldBeSrcPath = (Get-Item -Path $wouldBeSrcPath).FullName

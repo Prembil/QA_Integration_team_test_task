@@ -69,8 +69,6 @@ $watcher.Path = $sourceDir
 $watcher.IncludeSubdirectories = $true
 $watcher.EnableRaisingEvents = $true
 $watcher.Filter = "" # Watch all files
-# todo: remove
-# $watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::DirectoryName -bor [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::CreationTime -bor [System.IO.NotifyFilters]::Size
 
 # need to unregister events and clean up when the script exits
 try {
