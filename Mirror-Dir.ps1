@@ -13,6 +13,8 @@ param (
     [switch]$force
 )
 
+$ErrorActionPreference = "Stop"
+
 # Validate source directory
 if (-Not (Test-Path -Path $sourceDir -PathType Container)) {
     Write-Error "Source directory '$sourceDir' does not exist."
@@ -95,8 +97,8 @@ for ($i = 0; $i -lt $srcItems.Count; $i++) {
             $null = New-Item -Path $destinationDirPath -ItemType Directory -Force
         }
         catch {
-            Write-Output ([FileOperation]::new($item.FullName, $destinationDirPath, "Directory", "Failed"))
-            Write-Error $_.Exception.Message
+            Write-Output ([FileOperation]::new($item.FullName, $destinationDirPath, "Directory", "Failed Create"))
+            Write-Error $_.Exception.Message  -ErrorAction 'Continue'
             continue
         }
         Write-Output ([FileOperation]::new($item.FullName, $destinationDirPath, "Directory", "Created"))           
@@ -133,7 +135,7 @@ for ($i = 0; $i -lt $srcItems.Count; $i++) {
     }
     catch {
         Write-Output ([FileOperation]::new($item.FullName, $destinationFilePath, "File", "Failed"))
-        Write-Error $_.Exception.Message
+        Write-Error $_.Exception.Message  -ErrorAction 'Continue'
         continue
     }
     Write-Output ([FileOperation]::new($item.FullName, $destinationFilePath, "File", $fileExists ? "Updated" : "Copied"))
@@ -146,8 +148,8 @@ for ($i = 0; $i -lt $dstItems.Count; $i++) {
         $null = Remove-Item -Path $item.FullName -Force -Recurse
     }
     catch {
-        Write-Output ([FileOperation]::new($item.FullName, $null, $item.PSIsContainer ? "Directory" : "File", "Failed"))
-        Write-Error $_.Exception.Message
+        Write-Output ([FileOperation]::new($null, $item.FullName, $item.PSIsContainer ? "Directory" : "File", "Failed Delete"))
+        Write-Error $_.Exception.Message  -ErrorAction 'Continue'
         continue
     }
     Write-Output ([FileOperation]::new($null, $item.FullName, $item.PSIsContainer ? "Directory" : "File" , "Extra"))

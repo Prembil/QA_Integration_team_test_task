@@ -11,6 +11,8 @@ param (
     [string]$logFilePath
 )
 
+$ErrorActionPreference = "Stop"
+
 enum JobType : int {
     WatchDirTree
     CopyDir
@@ -25,7 +27,12 @@ function processMirrorDirTransfers {
         $logger)
 
     foreach ($transfer in $transfers) {
-        $logger.AppendLog($transfer.ToString(), $transfer.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
+        $logger.AppendLog($transfer.ToString(), $transfer.Status -like "Failed*" ? [MessageType]::Warning : [MessageType]::Info)
+    }
+
+    # Flush the log file if there were any transfers
+    if ($transfers.Count -gt 0) {
+        $logger.Flush();
     }
 }
 
@@ -208,12 +215,8 @@ try {
 
     # Wait for the initial directory structure to be built and all files to be copied
     while ((AreAllJobsInState($jobs, "Running")) -or $jobs[[JobType]::CopyDir].HasMoreData) {
-        $transfers = Receive-Job -Job $jobs[[JobType]::CopyDir] -Wait
+        $transfers = Receive-Job -Job $jobs[[JobType]::CopyDir] -Wait -ErrorAction SilentlyContinue
         processMirrorDirTransfers -transfers $transfers -logger $logger
-        # Flush the log file if there were any transfers
-        if ($transfers.Count -gt 0) {
-            $logger.Flush();
-        }
         Start-Sleep -Seconds 1
     }
 
@@ -228,7 +231,7 @@ try {
     # Polling changes in the source directory
     while ($jobs[[JobType]::WatchDirTree].State -eq "Running") {
         # Check for changes in the source directory
-        $changes = Receive-Job -Job $jobs[[JobType]::WatchDirTree]
+        $changes = Receive-Job -Job $jobs[[JobType]::WatchDirTree] -ErrorAction SilentlyContinue
         foreach ($change in $changes) {
             # Process each change in the source directory
             ProcessDirTreeChange -change $change -sourceDir $sourceDir -destinationDir $destinationDir -logger $logger -syncDateTime $syncDateTime
@@ -254,4 +257,3 @@ finally {
     if ($logger) { $logger.Dispose() }
     Write-Host "Sync-Main Cleanup complete."
 }
-

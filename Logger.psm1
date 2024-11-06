@@ -47,7 +47,7 @@ class Logger : IDisposable {
                 Write-Warning $message
             }
             Error {
-                Write-Error $message
+                Write-Error $message -ErrorAction SilentlyContinue -ErrorVariable Error
             }
             default {
                 Write-Host "[Unknown type] $message"
