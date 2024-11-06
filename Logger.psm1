@@ -82,6 +82,10 @@ class Logger : IDisposable {
         Add-Content -Path $logFilePath -Value $logEntry
         [Logger]::WriteConsole($message, $messageType)
     }
+
+    [void] Flush() {
+        $this.StreamWriter.Flush()
+    }
 }
 
 # function GetNewLoggerClass([string]$logFilePath) {

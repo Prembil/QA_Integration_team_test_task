@@ -56,6 +56,12 @@ Mirror a directory tree.
 
 `$force` is a switch to force the creation of the destination directory.
 
+# Tested On
+
+* Windows 10 Pro 64-bit
+  * PowerShell 7.4.6
+* Windows 11 Pro 64-bit
+  * PowerShell 7.4.6
 
 # Useful Links
 

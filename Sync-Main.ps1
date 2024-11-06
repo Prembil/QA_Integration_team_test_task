@@ -162,6 +162,12 @@ if ($destinationDir.StartsWith($sourceDir)) {
     exit 1
 }
 
+# Check if the log file path is a subdirectory of the source or destination directory
+if ($logFilePath.StartsWith($sourceDir) -or $logFilePath.StartsWith($destinationDir)) {
+    Write-Error "Log file path cannot be a subdirectory of the source or destination directory."
+    exit 1
+}
+
 # Initialize arrays, qInitTree (q1) for initial directory structure and qChanges (q2) for changes
 $global:qInitTree = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
 $global:qChanges = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
@@ -193,6 +199,10 @@ try {
         foreach ($transfer in $transfers) {
             $logger.AppendLog($transfer.ToString(), $transfer.Status -eq "Failed" ? [MessageType]::Warning : [MessageType]::Info)
         }
+        # Flush the log file if there were any transfers
+        if ($transfers.Count -gt 0) {
+            $logger.Flush();
+        }
         Start-Sleep -Seconds 1
     }
 
@@ -211,6 +221,10 @@ try {
         foreach ($change in $changes) {
             # Process each change in the source directory
             ProcessDirTreeChange -change $change -sourceDir $sourceDir -destinationDir $destinationDir -logger $logger -syncDateTime $syncDateTime
+        }
+        # Flush the log file if there were any changes
+        if ($changes.Count -gt 0) {
+            $logger.Flush();
         }
         Start-Sleep -Seconds 1
     }
