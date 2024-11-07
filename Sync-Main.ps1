@@ -183,7 +183,7 @@ if ($sourceDir -eq $destinationDir) {
 
 # Check if the source directory is a parent of the destination directory
 if ($destinationDir.StartsWith($sourceDir) -or $sourceDir.StartsWith($destinationDir)) {
-    Write-Error "Source directory cannot be a subdirectory of the destination directory."
+    Write-Error "Source directory cannot be a subdirectory of the destination directory and vice versa."
     exit 1
 }
 
