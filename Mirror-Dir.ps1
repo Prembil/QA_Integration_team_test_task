@@ -51,8 +51,8 @@ function RemoveMatchingSrcDst {
 }
 
 # convert to full path
-$sourceDir = (Get-Item -Path $sourceDir).FullName
-$destinationDir = (Get-Item -Path $destinationDir).FullName
+$sourceDir = Join-Path -Path (Get-Item -Path $sourceDir).FullName -ChildPath ''
+$destinationDir = Join-Path -Path (Get-Item -Path $destinationDir).FullName -ChildPath ''
 
 # Check if the source and destination directories are the same
 if ($sourceDir -eq $destinationDir) {

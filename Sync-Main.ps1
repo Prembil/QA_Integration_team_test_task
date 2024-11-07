@@ -171,9 +171,9 @@ if (-Not (Test-Path -Path $destinationDir -PathType Container)) {
     exit 1
 }
 
-# Convert to full path
-$sourceDir = (Get-Item -Path $sourceDir).FullName
-$destinationDir = (Get-Item -Path $destinationDir).FullName
+# convert to full path
+$sourceDir = Join-Path -Path (Get-Item -Path $sourceDir).FullName -ChildPath ''
+$destinationDir = Join-Path -Path (Get-Item -Path $destinationDir).FullName -ChildPath ''
 
 # Check if the source and destination directories are the same
 if ($sourceDir -eq $destinationDir) {
@@ -182,8 +182,8 @@ if ($sourceDir -eq $destinationDir) {
 }
 
 # Check if the source directory is a parent of the destination directory
-if ($destinationDir.StartsWith($sourceDir)) {
-    Write-Error "Destination directory cannot be a subdirectory of the source directory."
+if ($destinationDir.StartsWith($sourceDir) -or $sourceDir.StartsWith($destinationDir)) {
+    Write-Error "Source directory cannot be a subdirectory of the destination directory."
     exit 1
 }
 
