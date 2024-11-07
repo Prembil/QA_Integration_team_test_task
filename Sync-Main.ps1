@@ -75,6 +75,11 @@ function ProcessDirTreeChange {
         "Created" {
             try {
                 $null = Copy-Item -Path $change.FullPath -Destination $changeDestination -Force
+                # Run the Mirror-Dir.ps1 script if the created item is a directory
+                if ((Get-Item -Path $change.FullPath).PSIsContainer) {
+                    $transfers = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination
+                    if ($transfers) { processMirrorDirTransfers -transfers $transfers -logger $logger }
+                }
             }
             catch {
                 $logger.AppendLog("Failed to create: '$($changeDestination)' at [$isoTimestamp]", [MessageType]::Warning)
@@ -123,7 +128,7 @@ function ProcessDirTreeChange {
                     if ((Get-Item -Path $change.FullPath).PSIsContainer) {
                         # If it is a directory, copy the directory
                         $transfers = & "$PSScriptRoot/Mirror-Dir.ps1" -sourceDir $change.FullPath -destinationDir $changeDestination -force
-                        processMirrorDirTransfers -transfers $transfers -logger $logger
+                        if ($transfers){processMirrorDirTransfers -transfers $transfers -logger $logger}
                     }
                     else {
                         # Copy the file to the destination directory
@@ -216,7 +221,7 @@ try {
     # Wait for the initial directory structure to be built and all files to be copied
     while ((AreAllJobsInState($jobs, "Running")) -or $jobs[[JobType]::CopyDir].HasMoreData) {
         $transfers = Receive-Job -Job $jobs[[JobType]::CopyDir] -Wait -ErrorAction SilentlyContinue
-        processMirrorDirTransfers -transfers $transfers -logger $logger
+        if ($transfers) { processMirrorDirTransfers -transfers $transfers -logger $logger }
         Start-Sleep -Seconds 1
     }
 
