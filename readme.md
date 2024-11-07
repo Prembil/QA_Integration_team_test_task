@@ -9,7 +9,9 @@ Input parameters for scripts in this repository
 
 ## Sync-Main.ps1
 
-The main script to synchronize two directories. This script will utilize the other scripts in this repository. 
+The main script that mirrors one directory to another directory and reacts to changes in the source directory. 
+
+This script will utilize the other scripts in this repository. 
 
 ```powershell
 [Parameter(Mandatory = $true)]
@@ -65,7 +67,7 @@ Mirror a directory tree.
 
 # Useful Links
 
-* Datetime ISO 8601 - [Datetime ISO 8601](https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#the-round-trip-o-o-format-specifier)
+* Datetime ISO 8601 - [dotnet/standard/base-types](https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#the-round-trip-o-o-format-specifier)
 
 * System.IO.FileSystemWatcher
   * [FileSystemWatcher](https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher?view=net-8.0)
